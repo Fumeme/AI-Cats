@@ -29,4 +29,7 @@ public:
 	std::vector<Node*> findPath(Node* startNode, Node* goalNode);
 };
 
+
+
+
 #endif

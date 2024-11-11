@@ -3,37 +3,48 @@
 
 #include <Vector.h>
 #include <vector>
+#include <cmath>  // For abs function
 
 class Node
 {
 private:
-	int label;
+    int label;
 
 public:
     int x, y;
-    //float gCost;  // Cost from the start node
-    //float hCost;  // Heuristic (estimated cost to the goal)
-    //Node* parent; // Parent node to reconstruct the path
-    //bool walkable; // If the node is walkable
+    float gCost = INFINITY;  // Cost from the start node
+    float hCost = 0.0f;      // Heuristic (estimated cost to the goal)
+    Node* parent = nullptr;  // Parent node to reconstruct the path
+    bool walkable = true;    // If the node is walkable
 
-	Node(int label_) : label{ label_ } {};
-    //Node(int x_, int y_) : x(x_), y(y_), gCost(INFINITY), hCost(0), parent(nullptr), walkable(true) {}
+    // Constructor
+    Node(int label_) : label{ label_ }, x(0), y(0) {}
 
-	~Node() {}
+    // Destructor
+    ~Node() {}
 
-	int getLabel() { return label; };
-    // Get total cost
-    //float fCost() const { return gCost + hCost; }
+    int getLabel() { return label; }
+
+    // Calculate total cost (fCost = gCost + hCost)
+    float fCost() const
+    {
+        return gCost + hCost;
+    }
 
     // Compare nodes for the priority queue (min-heap)
-    //bool operator>(const Node& other) const {
-    //    return fCost() > other.fCost();
-    //}
+    bool operator>(const Node& other) const
+    {
+        return fCost() > other.fCost();
+    }
 
+    // Function to calculate heuristic (Manhattan distance)
+    float Heuristic(Node* targetNode) const
+    {
+        return std::abs(targetNode->x - this->x) + std::abs(targetNode->y - this->y);  // Manhattan Distance
+    }
+
+    // Optional: Function to convert label to grid position, if needed
     MATH::Vec2 NodeToGrid(int label_);
-    float Heuristic(Node* node_, Node* TargetNode_);
-    std::vector<Node*> FindPath(Node* startnode_, Node* targetnode_);
-
 
 };
 

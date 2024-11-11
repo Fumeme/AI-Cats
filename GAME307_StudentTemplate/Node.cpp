@@ -1,33 +1,61 @@
-#include "Node.h"
-#include <queue>
+#ifndef NODE_H
+#define NODE_H
 
+#include <Vector.h>
+#include <vector>
+#include <cmath>  
 
-MATH::Vec2 Node::NodeToGrid(int label_)
+class Node
 {
-    int x = label_ / 25;
-    int y = label_ % 25;
-    return MATH::Vec2(x, y);
-}
+private:
+    int label;
 
-float Node::Heuristic(Node* node_, Node* TargetNode_)
-{
-    int i = node_->getLabel() / 25;
-    int i = node_->getLabel() % 25;
+public:
+    int x, y;
+    float gCost = INFINITY;  // Cost from the start node
+    float hCost = 0.0f;      // Heuristic 
+    Node* parent = nullptr;  // Parent node to reconstruct the path
+    bool walkable = true;    // If the node is walkable
 
-    float dx = std::abs(NodeToGrid(node_->getLabel()).x - NodeToGrid(TargetNode_->getLabel()).x);
-    float dy = std::abs(NodeToGrid(node_->getLabel()).y - NodeToGrid(TargetNode_->getLabel()).y);
+    // Constructor
+    Node(int label_) : label{ label_ } {
+        x = label_ / 25;  // Assuming grid size is 25x25
+        y = label_ % 25;
+    }
 
-    return dx + dy;
+    // Destructor
+    ~Node() {}
 
-}
+    int getLabel() { return label; }
 
-std::vector<Node*> Node::FindPath(Node* startnode_, Node* targetnode_)
-{
-    std::vector<Node*> result;
-    result.clear();
-    Node* currentNode = startnode_;
+    // Calculate total cost (fCost = gCost + hCost)
+    float fCost() const
+    {
+        return gCost + hCost;
+    }
 
+    // Compare nodes for the priority queue (min-heap)
+    bool operator>(const Node& other) const
+    {
+        return fCost() > other.fCost();
+    }
 
+    // Function to calculate heuristic (Manhattan distance)
+    float Heuristic(Node* targetNode) const
+    {
+        return std::abs(targetNode->x - this->x) + std::abs(targetNode->y - this->y);  // Manhattan Distance
+    }
 
-    return result;
-}
+    // Optional: Function to convert label to grid position, if needed
+    MATH::Vec2 NodeToGrid(int label_)
+    {
+        int x = label_ / 25;  
+        int y = label_ % 25;  
+        return MATH::Vec2(x, y);
+    }
+
+    // Placeholder for FindPath (A* algorithm will be here)
+    std::vector<Node*> FindPath(Node* startnode_, Node* targetnode_);
+};
+
+#endif
