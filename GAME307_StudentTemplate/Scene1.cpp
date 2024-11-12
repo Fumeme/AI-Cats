@@ -94,7 +94,6 @@ bool Scene1::OnCreate() {
 		nodes.push_back(new Node(i));
 	}
 	graph->OnCreate(nodes);
-<<<<<<< Updated upstream
 
 	// Create connections between the nodes
 	// Example: connecting node 0 to node 1, node 1 to node 2, etc.
@@ -110,26 +109,7 @@ bool Scene1::OnCreate() {
 	path = graph->findPath(startNode, goalNode);
 	return true;
 }
-=======
->>>>>>> Stashed changes
 
-	// Create connections between the nodes
-	// Example: connecting node 0 to node 1, node 1 to node 2, etc.
-	//graph->addWeightedConnection(nodes[0], nodes[1], 1);
-	//graph->addWeightedConnection(nodes[1], nodes[2], 1);
-
-
-	// Define the start and goal nodes
-	Node* startNode = blinky->getNodeForPosition(myNPC->getPos());
-	Node* goalNode = blinky->getNodeForPosition(game->getPlayer()->getPos());
-
-	// Find the path
-	 path = graph->findPath(startNode, goalNode);
-	return !path.empty();
-}
-void renderPath(const std::vector<Node*>& path) {
-
-}
 void Scene1::OnDestroy()
 {
 	if (blinky)
@@ -187,21 +167,10 @@ void Scene1::Render() {
 
 	
 	// render any npc's
-	blinky->render(0.05f);
+	blinky->render(0.15f);
 
 	// render the player
-	game->RenderPlayer(0.04f);
-	/*
-	// Optionally render path (for debugging purposes)
-	for (size_t i = 0; i < path.size() - 1; ++i) {
-		Node* startNode = path[i+1];
-		Node* endNode = path[i + 2];
-		// Render a line from startNode to endNode
-		SDL_RenderDrawLine(renderer, startNode->x * tileWidth, startNode->y * tileHeight,
-			endNode->x * tileWidth, endNode->y * tileHeight);
-	}
-	*/
-
+	game->RenderPlayer(0.10f);
 
 	// Optionally render path (for debugging purposes)
 	for (size_t i = 0; i < path.size() - 1; ++i) {
