@@ -7,6 +7,7 @@ Scene2::Scene2(SDL_Window* sdlWindow_, GameManager* game_)
 	renderer = SDL_GetRenderer(window);
 	tileWidth = 0.0f;
 	tileHeight = 0.0f;
+	
 }
 
 Scene2::~Scene2()
@@ -118,7 +119,10 @@ void Scene2::calculateConnectionWeights()
 			}
 
 			// right
-
+			if (j < cols - 1) {
+				Node* to = tiles[i][j + 1]->getNode();
+				graph->addWeightedConnection(from, to, tileWidth); // Assuming tileWidth is the weight
+			}
 
 			// above
 			if ((i + 1) < rows)
@@ -128,7 +132,10 @@ void Scene2::calculateConnectionWeights()
 			}
 
 			// below
-
+			if (i < rows - 1) {
+				Node* to = tiles[i + 1][j]->getNode();
+				graph->addWeightedConnection(from, to, tileHeight); // Assuming tileHeight is the weight
+			}
 		}
 }
 
@@ -138,6 +145,7 @@ void Scene2::OnDestroy()
 
 void Scene2::Update(const float time)
 {
+	
 }
 
 void Scene2::Render()

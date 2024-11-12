@@ -30,7 +30,8 @@ void Tile::Render()
 		static_cast<int>(bottomRightScreen.x - topLeftScreen.x),
 		static_cast<int>(bottomRightScreen.y - topLeftScreen.y)
 	};
-
+	
+	// Set fill color
 	setRGBA(17, 138, 178, 255);
 	SDL_SetRenderDrawColor(renderer, r, g, b, a);
 	SDL_RenderFillRect(renderer, &rect);

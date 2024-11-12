@@ -1,4 +1,5 @@
 #include "StaticBody.h"
+#include "VMath.h"
 
 void StaticBody::Update(float deltaTime, KinematicSteeringOutput* steering_)
 {
@@ -30,4 +31,20 @@ void StaticBody::newOrientation()
 	{
 		orientation = atan2(-vel.y, vel.x);
 	}
+}
+void StaticBody::MoveTowards(Vec3 targetPos, float deltaTime) {
+	Vec3 direction = targetPos - pos;
+
+	// Normalize and scale with maxSpeed and deltaTime for frame independence
+	if (VMath::mag(direction) > maxSpeed * deltaTime) {
+		direction = VMath::normalize(direction);
+		pos += direction * maxSpeed * deltaTime;  // Adjusted for deltaTime
+	}
+	else {
+		pos = targetPos;  // Snap to target if within step size
+	}
+}
+
+bool StaticBody::HasReached(Vec3 targetPos, float threshold) const {
+	return VMath::distance(pos, targetPos) < threshold;  // Using custom threshold
 }

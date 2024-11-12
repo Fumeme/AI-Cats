@@ -11,6 +11,7 @@ Scene1::Scene1(SDL_Window* sdlWindow_, GameManager* game_) {
 	// create a NPC
 	myNPC = NULL;
 	blinky = nullptr;
+	currentTargetIndex = 0; // Track path index for NPC
 }
 
 Scene1::~Scene1() {}
@@ -27,7 +28,6 @@ bool Scene1::OnCreate() {
 	IMG_Init(IMG_INIT_PNG);
 
 	// Set player image to PacMan
-
 	SDL_Surface* image;
 	SDL_Texture* texture;
 
@@ -35,6 +35,14 @@ bool Scene1::OnCreate() {
 	texture = SDL_CreateTextureFromSurface(renderer, image);
 	game->getPlayer()->setImage(image);
 	game->getPlayer()->setTexture(texture);
+
+	//Tile codes
+	tileWidth = 3.0f;
+	tileHeight = 2.0f;
+	//creating a Vec3 tile position using float values:
+	float x = 5.0f;
+	float y = 3.0f; 
+	Vec3 tilePos(x, y, 0.0f);
 
 	// Set up myNPC kinematic character
 	Vec3 position = Vec3(5.0f, 3.0f, 0.0f);
@@ -47,6 +55,7 @@ bool Scene1::OnCreate() {
 		maxSpeed,
 		maxRotation
 	);
+
 	image = IMG_Load("Clyde.png");
 	texture = SDL_CreateTextureFromSurface(renderer, image);
 	//error checking
@@ -76,6 +85,28 @@ bool Scene1::OnCreate() {
 
 	// end of character set ups
 
+	//Graph and Nodes
+	// Create the graph and nodes
+	graph = new Graph();
+	std::vector<Node*> nodes;
+	//create 10 nodes
+	for (int i = 0; i < 10; ++i) {
+		nodes.push_back(new Node(i));
+	}
+	graph->OnCreate(nodes);
+
+	// Create connections between the nodes
+	// Example: connecting node 0 to node 1, node 1 to node 2, etc.
+	graph->addWeightedConnection(nodes[0], nodes[1], 1);
+	graph->addWeightedConnection(nodes[1], nodes[2], 1);
+
+
+	// Define the start and goal nodes
+	Node* startNode = nodes[0];
+	Node* goalNode = nodes[9];
+
+	// Find the path
+	path = graph->findPath(startNode, goalNode);
 	return true;
 }
 
@@ -99,6 +130,25 @@ void Scene1::Update(const float deltaTime) {
 
 	//myNPC->Update(deltaTime, steering);
 
+	   // If there is a path to follow, update NPC movement along it
+	if (!path.empty()) {
+		Node* currentNode = path[currentTargetIndex];
+		Vec3 targetPos(currentNode->x * tileWidth, currentNode->y * tileHeight, 0.0f);
+
+		// Move myNPC towards the target node
+		myNPC->MoveTowards(targetPos, deltaTime);
+
+		// Check if NPC has reached the current target node
+		if (myNPC->HasReached(targetPos, 1.0f)) {
+			currentTargetIndex++; // Move to the next node in the path
+		}
+
+		// If we reach the end of the path, reset or stop
+		if (currentTargetIndex >= path.size()) {
+			currentTargetIndex = 0; // Optionally reset or stop NPC movement
+		}
+	}
+
 	blinky->Update(deltaTime);
 
 	// Update player
@@ -115,13 +165,22 @@ void Scene1::Render() {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 	SDL_RenderClear(renderer);
 
-	//renderMyNPC();
-
+	
 	// render any npc's
 	blinky->render(0.15f);
 
 	// render the player
 	game->RenderPlayer(0.10f);
+
+	// Optionally render path (for debugging purposes)
+	for (size_t i = 0; i < path.size() - 1; ++i) {
+		Node* startNode = path[i];
+		Node* endNode = path[i + 1];
+		// Render a line from startNode to endNode
+		SDL_RenderDrawLine(renderer, startNode->x * tileWidth, startNode->y * tileHeight,
+			endNode->x * tileWidth, endNode->y * tileHeight);
+	}
+
 
 	SDL_RenderPresent(renderer);
 }

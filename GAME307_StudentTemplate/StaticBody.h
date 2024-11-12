@@ -33,6 +33,9 @@ public:
 
     void Update(float deltaTime, KinematicSteeringOutput* steering_);
     void newOrientation();
+    // Add MoveTowards and HasReached declarations
+    void MoveTowards(Vec3 targetPos, float deltaTime); // Moves towards a specified target position
+    bool HasReached(Vec3 targetPos, float threshold) const;// Checks if it has reached the target position
 };
 
 #endif
