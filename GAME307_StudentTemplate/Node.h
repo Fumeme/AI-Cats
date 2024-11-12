@@ -18,39 +18,6 @@ public:
     bool walkable = true;    // If the node is walkable
 
     // Constructor
-<<<<<<< Updated upstream
-    Node(int label_) : label{ label_ }, x(0), y(0) {}
-
-    // Destructor
-    ~Node() {}
-
-    int getLabel() { return label; }
-
-    // Calculate total cost (fCost = gCost + hCost)
-    float fCost() const
-    {
-        return gCost + hCost;
-    }
-
-    // Compare nodes for the priority queue (min-heap)
-    bool operator>(const Node& other) const
-    {
-        return fCost() > other.fCost();
-    }
-
-    // Function to calculate heuristic (Manhattan distance)
-    float Heuristic(Node* targetNode) const
-    {
-        return std::abs(targetNode->x - this->x) + std::abs(targetNode->y - this->y);  // Manhattan Distance
-    }
-
-    // Optional: Function to convert label to grid position, if needed
-    MATH::Vec2 NodeToGrid(int label_);
-
-};
-
-#endif
-=======
     Node(int label_);
 
     // Destructor
@@ -76,4 +43,3 @@ public:
 };
 
 #endif // NODE_H
->>>>>>> Stashed changes

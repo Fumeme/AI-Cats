@@ -94,24 +94,6 @@ bool Scene1::OnCreate() {
 		nodes.push_back(new Node(i));
 	}
 	graph->OnCreate(nodes);
-<<<<<<< Updated upstream
-
-	// Create connections between the nodes
-	// Example: connecting node 0 to node 1, node 1 to node 2, etc.
-	graph->addWeightedConnection(nodes[0], nodes[1], 1);
-	graph->addWeightedConnection(nodes[1], nodes[2], 1);
-
-
-	// Define the start and goal nodes
-	Node* startNode = nodes[0];
-	Node* goalNode = nodes[9];
-
-	// Find the path
-	path = graph->findPath(startNode, goalNode);
-	return true;
-}
-=======
->>>>>>> Stashed changes
 
 	// Create connections between the nodes
 	// Example: connecting node 0 to node 1, node 1 to node 2, etc.
