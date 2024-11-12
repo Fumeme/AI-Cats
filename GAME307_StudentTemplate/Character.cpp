@@ -1,7 +1,11 @@
 #include "Character.h"
+#include "Tile.h"
+#include "Node.h"
+
 
 bool Character::OnCreate(Scene* scene_)
 {
+	path.clear();
 	scene = scene_;
 
 	// Configure and instantiate the body to use for the demo
@@ -38,6 +42,7 @@ bool Character::OnCreate(Scene* scene_)
 
 void Character::OnDestroy()
 {
+	path.clear();
 	if (body)
 	{
 		if (body->getTexture())
@@ -45,6 +50,7 @@ void Character::OnDestroy()
 			SDL_DestroyTexture(body->getTexture());
 		}
 		delete body;
+
 	}
 };
 
@@ -69,30 +75,78 @@ bool Character::setTextureWith(string file)
 	return true;
 }
 
+
+Node* Character::getNodeForPosition(const Vec3& position) const
+{
+	int gridWidth = 25, gridHeight = 25;
+	int gridSize = gridHeight * gridWidth;
+	int x = static_cast<int>(position.x / gridSize);  // Convert position to grid coordinates
+	int y = static_cast<int>(position.y / gridSize);
+
+	long nodeLabel = y * gridWidth + x;
+
+
+
+	// Check if the position is within bounds of the grid
+	if (x < 0 || x > gridWidth || y < 0 || y > gridHeight) {
+		std::cerr << "Error: out of bounds error." << std::endl;
+		return nullptr;  // Return nullptr if out of bounds
+	}
+	if(scene->getGraph()->getNode(nodeLabel))
+	return scene->getGraph()->getNode(nodeLabel);
+	else {
+		std::cerr << "Error: Invalid node error." << std::endl;
+		return nullptr;
+	}
+}
+
+
 void Character::Update(float deltaTime)
 {
-	// create a new overall steering output
-	SteeringOutput* steering;
+	// If the path is empty, calculate a new path to the player
+	if (path.empty()) {  // If no path, find the path
+		Node* startNode = getNodeForPosition(body->getPos());
+		Node* goalNode = getNodeForPosition(scene->game->getPlayer()->getPos());
 
-	// set the target for steering; target is used by the steerTo... functions
-	// (often the target is the Player)
+		if (!startNode) {
+			std::cerr << "Error: Invalid start node." << std::endl;
+			return;
+		}
+		else if (!goalNode) 
+		{
+			std::cerr << "Error: Invalid goal node." << std::endl;
+			return;
+		}
 
-	// using the target, calculate and set values in the overall steering output
-	// TODO: error handling if new fails
 
-	SteeringBehaviour* steering_algorithm = new Seek(body, scene->game->getPlayer());
-	steering = steering_algorithm->getSteering();
+		// Optionally visualize the path for debugging
+		 scene->renderPath(path);
+		 
+	}
 
-	// apply the steering to the equations of motion
-	body->Update(deltaTime, steering);
+	// If there are nodes in the path, steer towards the next node
+	if (!path.empty()) {
+		Node* nextNode = path.front();  // Get the next node in the path
+		MATH::Vec2 nextNodePos = nextNode->NodeToGrid(nextNode->getLabel());  // Get the position of that node
 
-	// clean up memory
-	// (delete only those objects created in this function)
-	if (steering_algorithm)
-	{
+		// Steering behavior: steer towards the next node in the path
+		SteeringBehaviour* steering_algorithm = new Seek(body, scene->game->getPlayer());
+		SteeringOutput* steering = steering_algorithm->getSteering();
+
+		// Apply the steering to the character's body
+		body->Update(deltaTime, steering);
+		/*
+		// Check if the character has reached the current node, if so, remove it from the path
+		if (Vec2::distance(body->getPos().xy(), nextNodePos) < 0.2f) {  // Use a threshold to check if it's close enough
+			path.erase(path.begin());  // Remove the node from the front of the path
+		}
+		*/
+		// Clean up the steering algorithm
 		delete steering_algorithm;
 	}
 }
+
+
 
 void Character::HandleEvents(const SDL_Event& event)
 {

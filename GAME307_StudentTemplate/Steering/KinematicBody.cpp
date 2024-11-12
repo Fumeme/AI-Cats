@@ -2,26 +2,26 @@
 
 void KinematicBody::Update(float deltaTime, SteeringOutput* steering)
 {
-    // Update position, call Update from parent class
-    // Note that would update velocity too, but the acceleration in the member object is 0.0!
+    // Update position and velocity using the base class method
     Body::Update(deltaTime);
 
-    // TODO Body reaching edge of scene needs to be handled somewhere
-    // especially if implementing the flee behaviour
-
-    // Adjust velocity and rotation according to steering input
+    // If there is steering input, adjust velocity and rotation accordingly
     if (steering)
     {
-        accel = steering->linear;
-        angular = steering->angular;
+        accel = steering->linear;  // Update linear acceleration
+        angular = steering->angular;  // Update angular acceleration
     }
 
-    // Clip accel to max
+    // Limit acceleration to max speed
     if (VMath::mag(accel) > maxAcceleration)
     {
         accel = VMath::normalize(accel) * maxAcceleration;
     }
 
-    //Clip angular accel too
-    angular = (angular > maxAngular ? maxAngular : angular);
+    // Clip angular acceleration to the max allowed
+    if (angular > maxAngular)
+    {
+        angular = maxAngular;
+    }
 }
+
