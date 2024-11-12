@@ -16,46 +16,45 @@ Graph::~Graph()
 bool Graph::OnCreate(std::vector<Node*> nodes_)
 {
 
-	int numNodes = nodes_.size();
+    // given a list of nodes, initialize a matrix of costs with 0.0
+    int numNodes = nodes_.size();
 
-	// Resize cost matrix to match the number of nodes
-	cost.resize(numNodes);
+    cost.resize(numNodes);
+    for (int i = 0; i < numNodes; i++)
+    {
+        // populate the internal map
+        if (i != nodes_[i]->getLabel())
+        {
+            std::cerr << "node with label 'i' not in the 'i' position for " << i << "\n";
+            return false;
+        }
+        node[i] = nodes_[i];
 
-	for (int i = 0; i < numNodes; ++i)
-	{
-		// Insert node into the map using the node's label as the key
-		if (nodes_[i])
-		{
-			node[nodes_[i]->getLabel()] = nodes_[i];
-		}
-		else {
-			std::cerr << "Invalid graph!" << std::endl;
-			return false;
-		}
+        // set up connections
+        cost[i].resize(numNodes);
 
-		// Resize the cost matrix row to match the number of nodes
-		cost[i].resize(numNodes, INFINITY); // Initialize all connections with infinity (no path)
-	}
+        for (int j = 0; j < numNodes; j++)
+        {
+            cost[i][j] = 0.0f;
+        }
+    }
 
-	return true;
+    return true;
 }
-
 
 int Graph::numNodes()
 {
-	return node.size();
+    return node.size();
 }
 
 void Graph::addWeightedConnection(Node* fromNode, Node* toNode, float weight)
 {
-
-	// Add weight to the connection from 'fromNode' to 'toNode'
-	cost[fromNode->getLabel()][toNode->getLabel()] = weight;
+    // Add weight to the connection from 'fromNode' to 'toNode'
+    cost[fromNode->getLabel()][toNode->getLabel()] = weight;
 }
 
 std::vector<Node*> Graph::neighbours(Node* fromNode)
 {
-
 	std::vector<Node*> result;
 	int from = fromNode->getLabel();
 
