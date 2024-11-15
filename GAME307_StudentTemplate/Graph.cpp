@@ -1,9 +1,5 @@
 #include "Graph.h"
-#include "Node.h"
-#include <map>
-#include <vector>
-#include <iostream>
-#include <algorithm> 
+#include <queue>
 
 Graph::Graph()
 {
@@ -15,7 +11,6 @@ Graph::~Graph()
 
 bool Graph::OnCreate(std::vector<Node*> nodes_)
 {
-
     // given a list of nodes, initialize a matrix of costs with 0.0
     int numNodes = nodes_.size();
 
@@ -49,118 +44,121 @@ int Graph::numNodes()
 
 void Graph::addWeightedConnection(Node* fromNode, Node* toNode, float weight)
 {
-    // Add weight to the connection from 'fromNode' to 'toNode'
     cost[fromNode->getLabel()][toNode->getLabel()] = weight;
 }
 
 std::vector<Node*> Graph::neighbours(Node* fromNode)
 {
-	std::vector<Node*> result;
-	int from = fromNode->getLabel();
-
-	// Check all possible neighbors
-	for (int j = 0; j < numNodes(); j++)
-	{
-		if (cost[from][j] > 0.0f)  // Only add if there is a connection
-		{
-			if (j)  // Ensure it's a valid pointer
-			{
-				result.push_back(getNode(j));
-			}
-		}
-	}
-
-	return result;
+    std::vector<Node*> result = {};
+    int from = fromNode->getLabel();
+    for (int j = 0; j < numNodes(); j++)
+    {
+        if (cost[from][j] > 0.0f)
+        {
+            result.push_back(getNode(j));
+        }
+    }
+    return result;
 }
+
+struct NodeAndPriority
+{
+    Node* node;
+    float priority;
+
+    bool operator()(NodeAndPriority const& lhs, NodeAndPriority const& rhs)
+    {
+        return lhs.priority > rhs.priority;
+    }
+
+
+};
+
+
 
 std::vector<Node*> Graph::findPath(Node* startNode, Node* goalNode)
 {
-	std::vector<Node*> openList;
-	std::vector<Node*> closedList;
+    std::vector<Node*> result;
 
-	// Ensure startNode and goalNode are valid
-	if (!startNode) {
-		std::cerr << "Invalid start node!" << std::endl;
-		return {};
-	}
-	else if (!goalNode) {
-		std::cerr << "Invalid goal node!" << std::endl;
-		return {};
-	}
+    //declarations
+    float new_cost;
+    float priority;
+    Node* currentNode = startNode;
 
-	startNode->gCost = 0.0f;
-	startNode->hCost = startNode->Heuristic(goalNode);
-	openList.push_back(startNode);
+    //frontier
+    std::priority_queue<NodeAndPriority, std::deque<NodeAndPriority>, NodeAndPriority> frontier;
+    frontier.push(NodeAndPriority{ currentNode, 0.0f });
 
-	while (!openList.empty())
-	{
-		// Find node with lowest fCost
-		Node* currentNode = nullptr;
-		for (Node* node : openList)
-		{
-			if (!node) {
-				std::cerr << "Encountered a nullptr in openList!" << std::endl;
-				continue;  // Skip invalid nodes
-			}
+    // track solution path (came_from)
+    std::vector<int> came_from;
+    // intialize to -1, a value that cannot be label of a node
+    came_from.resize(numNodes(), -1);
 
-			if (currentNode == nullptr || node->fCost() < currentNode->fCost())
-			{
-				currentNode = node;
-			}
-		}
+    //cost so far storage
+    //use std::map, not vector, to allow detecting if a node has an entry
+    int start = startNode->getLabel();
+    int goal = goalNode->getLabel();
 
-		// If currentNode is nullptr, we are in a bad state, should break
-		if (!currentNode) {
-			std::cerr << "No valid node found in openList!" << std::endl;
-			break;
-		}
+    std::map<int, float> cost_so_far;
+    cost_so_far[start] = 0.0f;
 
-		// If we reached the goal node, reconstruct the path
-		if (currentNode == goalNode)
-		{
-			std::vector<Node*> path;
-			while (currentNode != nullptr)
-			{
-				path.push_back(currentNode);
-				currentNode = currentNode->parent;
-			}
-			std::reverse(path.begin(), path.end());
-			return path;
-		}
+    //TODO 
 
-		// Move currentNode from openList to closedList
-		openList.erase(std::remove(openList.begin(), openList.end(), currentNode), openList.end());
-		closedList.push_back(currentNode);
+    // loop through the frontier, while it is not empty
+    while (!frontier.empty())
+    {
+        //get the top node, save it in currentNode
+        currentNode = frontier.top().node;
+        //pop the top node
+        frontier.pop();
+        // if its the goal, then break out
+        if (currentNode->getLabel() == goal)
+        {
+            break;
+        }
 
-		// Explore neighbors
-		for (Node* neighbor : neighbours(currentNode))
-		{
-			if (std::find(closedList.begin(), closedList.end(), neighbor) != closedList.end())
-				continue;  // Skip already processed neighbors
+        //for the neighbours of current node
+        for (Node* next : neighbours(currentNode))
+        {
+            int nextLabel = next->getLabel();
+            if (nextLabel >= numNodes())
+            {
+                std::cerr << "Error: nextLabel out of range: " << nextLabel << "\n";
+                continue;
+            }
 
-			if (!neighbor) {
-				std::cerr << "Encountered a nullptr in neighbors!" << std::endl;
-				continue;  // Skip invalid neighbors
-			}
 
-			float tentativeGCost = currentNode->gCost + cost[currentNode->getLabel()][neighbor->getLabel()];
+            //calculate new cost
+            new_cost = cost_so_far[currentNode->getLabel()] + cost[currentNode->getLabel()][nextLabel];
+            //if neighbour is not an index in cost_so_far or new_cost is lower
+            if (cost_so_far.find(nextLabel) == cost_so_far.end() || new_cost < cost_so_far[nextLabel])
+            {
+                // found a better path, so update data structures
+                cost_so_far[nextLabel] = new_cost;
+                priority = new_cost; // Assuming heuristic is zero for simplicity
+                frontier.push(NodeAndPriority{ next, priority });
+                came_from[nextLabel] = currentNode->getLabel();
+            }
+        }
+    }
 
-			// If the tentative GCost is better, update neighbor
-			if (tentativeGCost < neighbor->gCost)
-			{
-				neighbor->parent = currentNode;
-				neighbor->gCost = tentativeGCost;
-				neighbor->hCost = neighbor->Heuristic(goalNode);
+    // TODO
+    // follow the breadcrumbs in came from to rebuild the path, store in result
+    int current = goal;
+    while (current != start)
+    {
+        if (current >= numNodes() || current < 0)
+        {
+            std::cerr << "Error: current out of range: " << current << "\n";
+            break;
+        }
+        result.push_back(getNode(current));
+        current = came_from[current];
+    }
+    result.push_back(getNode(start));
+    std::reverse(result.begin(), result.end());
 
-				// If the neighbor is not in openList, add it
-				if (std::find(openList.begin(), openList.end(), neighbor) == openList.end())
-				{
-					openList.push_back(neighbor);
-				}
-			}
-		}
-	}
 
-	std::cerr << "No path found!" << std::endl;
-	return {};  // Return empty path if no path is found
+
+    return result;
 }

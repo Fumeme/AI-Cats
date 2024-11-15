@@ -1,23 +1,159 @@
 #include "Scene1.h"
 
 
+void Scene1::CreateTiles()
+{
+	//singleTile = new Tile(Vec3(15.0f, 7.7f, 0.0f), 3.0f, 3.0f, this);
+	tileHeight = 1.5f;
+	tileWidth = 1.5f;
+
+	//resize tiles
+	int cols = ceil((xAxis - 0.5 * tileWidth) / tileWidth);
+	int rows = ceil((yAxis - 0.5 * tileHeight) / tileHeight);
+
+	tiles.resize(rows);
+	for (int i = 0; i < rows; i++)
+	{
+		tiles[i].resize(cols);
+	}
+
+	sceneNodes.resize(cols * rows);
+
+	Node* n;
+	int label = 0;
+	Tile* t;
+	int i, j;
+
+	i = 0;
+	j = 0;
+
+
+	for (float y = 0.5f * tileHeight; y < yAxis; y += tileHeight)
+	{
+		//do things as y increases
+		for (float x = 0.5f * tileWidth; x < xAxis; x += tileWidth)
+		{
+			//do things as x increases
+			//create tile
+			n = new Node(label);
+			sceneNodes[label] = n;
+			Vec3 tilePos = Vec3(x, y, 0.0f);
+			t = new Tile(n, tilePos, tileWidth, tileHeight, this);
+			tiles[i][j] = t;
+			//i or j?
+			j++;
+			label++;
+
+		}
+		j = 0;
+		i++;
+	}
+
+}
+
+Node* Scene1::getNodeAtPosition(int mouseX, int mouseY) {
+	// Convert mouse coordinates to world coordinates
+	float worldX = (mouseX / (float)w) * xAxis;
+	float worldY = yAxis - (mouseY / (float)h) * yAxis;
+
+	// Find the corresponding tile
+	int col = worldX / tileWidth;
+	int row = worldY / tileHeight;
+
+	if (col >= 0 && col < tiles[0].size() && row >= 0 && row < tiles.size()) {
+		return tiles[row][col]->getNode();
+	}
+
+	return nullptr;
+}
+
+//Tile* Scene1::getTileAtPosition(float x, float y) {
+//
+//	int col = x / tileWidth;
+//	int row = y / tileHeight;
+//
+//	if (col >= 0 && col < tiles[0].size() && row < tiles.size()) {
+//		return tiles[row][col];
+//	}
+//
+//	return nullptr;
+//}
+
+
+void Scene1::calculateConnectionsWeights()
+{
+	// I'm smart enough to only call this
+	// after having properly created the tiles matrix
+	int rows = tiles.size();
+	int cols = tiles[0].size();
+
+	for (int i = 0; i < rows; i++)
+	{
+		for (int j = 0; j < cols; j++)
+		{
+			//tiles[i][j]->getNode();
+			//
+			//                 i+1, j
+			//   i,j-1            i,j                i,j+1
+			//                 i-1, j
+			Tile* fromTile = tiles[i][j];
+			Node* from = fromTile->getNode();
+
+			// left
+			if (j >= 1 && tiles[i][j - 1]->isPassable() == true)
+			{
+				Node* to = tiles[i][j - 1]->getNode();
+				graph->addWeightedConnection(from, to, tileWidth);
+			}
+
+			// right
+			if ((j + 1) < cols && tiles[i][j + 1]->isPassable() == true)
+			{
+				Node* to = tiles[i][j + 1]->getNode();
+				graph->addWeightedConnection(from, to, tileWidth);
+			}
+
+			//above
+			if ((i + 1) < rows && tiles[i + 1][j]->isPassable() == true)
+			{
+				Node* to = tiles[i + 1][j]->getNode();
+				graph->addWeightedConnection(from, to, tileHeight);
+			}
+
+			//below
+			if ((i - 1) >= 0 && tiles[i - 1][j]->isPassable() == true)
+			{
+				Node* to = tiles[i - 1][j]->getNode();
+				graph->addWeightedConnection(from, to, tileHeight);
+			}
+
+		}
+
+
+	}
+
+}
+
 Scene1::Scene1(SDL_Window* sdlWindow_, GameManager* game_) {
 	window = sdlWindow_;
 	game = game_;
 	renderer = SDL_GetRenderer(window);
 	xAxis = 25.0f;
 	yAxis = 15.0f;
+	tileHeight = 0.0f;
+	tileWidth = 0.0f;
+	selectedNode = nullptr;
+
 
 	// create a NPC
-	myNPC = NULL;
 	blinky = nullptr;
-	currentTargetIndex = 0; // Track path index for NPC
+	
 }
 
 Scene1::~Scene1() {}
 
 bool Scene1::OnCreate() {
-	int w, h;
+	//int w, h;
 	SDL_GetWindowSize(window, &w, &h);
 
 	Matrix4 ndc = MMath::viewportNDC(w, h);
@@ -27,86 +163,56 @@ bool Scene1::OnCreate() {
 	/// Turn on the SDL imaging subsystem
 	IMG_Init(IMG_INIT_PNG);
 
+	CreateTiles();
+
+	//background = IMG_Load("Map.png");
+	backgroundtexture = SDL_CreateTextureFromSurface(renderer, background);
+
 	// Set player image to PacMan
+
 	SDL_Surface* image;
 	SDL_Texture* texture;
 
-	image = IMG_Load("pacman.png");
+
+
+	image = IMG_Load("Pacman.png");
 	texture = SDL_CreateTextureFromSurface(renderer, image);
 	game->getPlayer()->setImage(image);
+	game->getPlayer()->setPos(Vec3(2.5f, 0.8f, 0.0f));
 	game->getPlayer()->setTexture(texture);
 
-	//Tile codes
-	tileWidth = 3.0f;
-	tileHeight = 2.0f;
-	//creating a Vec3 tile position using float values:
-	float x = 5.0f;
-	float y = 3.0f; 
-	Vec3 tilePos(x, y, 0.0f);
 
-	// Set up myNPC kinematic character
-	Vec3 position = Vec3(5.0f, 3.0f, 0.0f);
-	float orientation = 0.0f;
-	float maxSpeed = 5.0f;
-	float maxRotation = 1.0f;
-	myNPC = new StaticBody(
-		position,
-		orientation,
-		maxSpeed,
-		maxRotation
-	);
-
-	image = IMG_Load("Clyde.png");
-	texture = SDL_CreateTextureFromSurface(renderer, image);
-	//error checking
-	if (image == nullptr)
-	{
-		std::cerr << "Can't open clyde image\n";
-		return false;
-	}
-	if (texture == nullptr)
-	{
-		std::cerr << "Can't open clyde texture\n";
-		return false;
-	}
-	else
-	{
-		myNPC->setTexture(texture);
-		SDL_FreeSurface(image);
-	}
 
 	// Set up characters, choose good values for the constructor
 	// or use the defaults, like this
 	blinky = new Character();
+	
 	if (!blinky->OnCreate(this) || !blinky->setTextureWith("Blinky.png"))
 	{
 		return false;
 	}
 
+	
 	// end of character set ups
 
-	//Graph and Nodes
-	// Create the graph and nodes
+	// create a graph
 	graph = new Graph();
-	std::vector<Node*> nodes;
-	//create 10 nodes
-	for (int i = 0; i < 10; ++i) {
-		nodes.push_back(new Node(i));
+	if (!graph->OnCreate(sceneNodes))
+	{
+		//TODO error message
+		return false;
 	}
-	graph->OnCreate(nodes);
 
-	// Create connections between the nodes
-	// Example: connecting node 0 to node 1, node 1 to node 2, etc.
-	graph->addWeightedConnection(nodes[0], nodes[1], 1);
-	graph->addWeightedConnection(nodes[1], nodes[2], 1);
+	calculateConnectionsWeights();
+
+	std::vector<Node*> path = graph->findPath(
+		sceneNodes[0],
+		sceneNodes[15]
+	);
 
 
-	// Define the start and goal nodes
-	Node* startNode = nodes[0];
-	Node* goalNode = nodes[9];
 
-	// Find the path
-	path = graph->findPath(startNode, goalNode);
+
 	return true;
 }
 
@@ -117,102 +223,130 @@ void Scene1::OnDestroy()
 		blinky->OnDestroy();
 		delete blinky;
 	}
+
+
 }
 
 void Scene1::Update(const float deltaTime) {
 	// Calculate and apply any steering for npc's
-	KinematicSteeringOutput* steering;
-
-	//create seek algorithm
-	KinematicSeek* steeringAlgorithm;
-	steeringAlgorithm = new KinematicSeek(myNPC, game->getPlayer());
-	steering = steeringAlgorithm->getSteering();
-
-	//myNPC->Update(deltaTime, steering);
-
-	   // If there is a path to follow, update NPC movement along it
-	if (!path.empty()) {
-		Node* currentNode = path[currentTargetIndex];
-		Vec3 targetPos(currentNode->x * tileWidth, currentNode->y * tileHeight, 0.0f);
-
-		// Move myNPC towards the target node
-		myNPC->MoveTowards(targetPos, deltaTime);
-
-		// Check if NPC has reached the current target node
-		if (myNPC->HasReached(targetPos, 1.0f)) {
-			currentTargetIndex++; // Move to the next node in the path
-		}
-
-		// If we reach the end of the path, reset or stop
-		if (currentTargetIndex >= path.size()) {
-			currentTargetIndex = 0; // Optionally reset or stop NPC movement
-		}
-	}
-
 	blinky->Update(deltaTime);
-
+	
 	// Update player
 	game->getPlayer()->Update(deltaTime);
-
-	// memory management
-	if (steeringAlgorithm)
-	{
-		delete steeringAlgorithm;
-	}
 }
 
 void Scene1::Render() {
+	//do not deprioritize these
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 	SDL_RenderClear(renderer);
 
-	
+	//move this above tile rendering to show map after grid & vice versa
+	SDL_RenderCopy(renderer, backgroundtexture, NULL, NULL);
+
+	for (int i = 0; i < tiles.size(); i++)
+	{
+		for (int j = 0; j < tiles[i].size(); j++)
+		{
+			Tile* tile = tiles[i][j];
+			//if (tile->getNode() == selectedNode) {
+			//	// Change color for the selected node
+			//	tile->setColor(255, 0, 0, 255); // Red color
+			//}
+			//else {
+			//	tile->setColor(17, 178, 178, 255); // Default color
+			//}
+
+
+			tile->Render();
+
+
+		}
+
+	}
+
+
+
 	// render any npc's
-	blinky->render(0.15f);
+	blinky->render(0.10f);
+	//cop->render(0.10f);
 
 	// render the player
 	game->RenderPlayer(0.10f);
 
-	// Optionally render path (for debugging purposes)
-	for (size_t i = 0; i < path.size() - 1; ++i) {
-		Node* startNode = path[i];
-		Node* endNode = path[i + 1];
-		// Render a line from startNode to endNode
-		SDL_RenderDrawLine(renderer, startNode->x * tileWidth, startNode->y * tileHeight,
-			endNode->x * tileWidth, endNode->y * tileHeight);
-	}
 
 
 	SDL_RenderPresent(renderer);
 }
 
-void Scene1::renderMyNPC()
-{
-	SDL_Rect rect;
-	Vec3 screenCoords;
-	int w, h;
-
-	// convert coords
-	screenCoords = projectionMatrix * myNPC->getPos();
-	float scale = 0.15f;
-
-	SDL_QueryTexture(myNPC->getTexture(), nullptr, nullptr, &w, &h);
-
-	rect.w = static_cast<int>(w * scale);
-	rect.h = static_cast<int>(h * scale);
-	rect.x = static_cast<int>(screenCoords.x - 0.5 * rect.w);
-	rect.y = static_cast<int>(screenCoords.y - 0.5 * rect.h);
-
-	float orientation = myNPC->getOrientation();
-	double degrees = orientation * 180.0f / M_PI;
-
-	SDL_RenderCopyEx(renderer, myNPC->getTexture(), nullptr, &rect, degrees, nullptr, SDL_FLIP_NONE);
-
-}
-
 void Scene1::HandleEvents(const SDL_Event& event)
 {
-	// send events to npc's as needed
+
+	//if mouse clicked, record position on screen and relay it to terminal
+	if (event.type == SDL_MOUSEBUTTONDOWN)
+	{
+		// get mouse button clicks location
+		int x = event.button.x, y = event.button.y;
+		SDL_GetMouseState(&x, &y);
+		printf("Clicked at: %i x, %i x\n", x, y);
+
+
+		//Gets the node at the position of the mouse click
+		Node* selectedNode = getNodeAtPosition(x, y);
+		if (selectedNode)
+		{
+
+			printf("Selected Node: %d\n", selectedNode->getLabel());
+			// You can now use the selected node for further processing
+
+
+
+			for (int i = 0; i < tiles.size(); i++)
+			{
+				for (int j = 0; j < tiles[i].size(); j++)
+				{
+
+					Tile* tile = tiles[i][j];
+
+					if (tile->getNode() == selectedNode) {
+						tile->setPassable(false);
+						// Change color for the selected node
+						tile->setColor(255, 0, 0, 255); // Red color
+						//SDL_RenderPresent(renderer);
+						calculateConnectionsWeights();
+						graph->findPath(
+							sceneNodes[0],
+							sceneNodes[15]
+						);
+
+					}
+					else {
+
+					}
+				}
+
+
+			}
+
+
+
+
+		}
+
+
+
+		SDL_RenderPresent(renderer);
+		// send events to npc's as neededD
+
+	}
+
+
+
+
+
+
 
 	// send events to player as needed
 	game->getPlayer()->HandleEvents(event);
+
+
 }
