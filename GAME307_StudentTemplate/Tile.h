@@ -18,7 +18,7 @@ private:
 	Vec3 pos;
 	Node* node;
 	Scene* scene;
-	bool passable;
+	bool passable = true;
 	SDL_Color color;
 	SDL_Rect rect;
 	SDL_Renderer* renderer = scene->game->getRenderer();
@@ -39,10 +39,11 @@ public:
 	virtual ~Tile() {}
 	void Render();
 	Node* getNode() const { return node; }
-	bool isTileBlocked();
 	void setColor(Uint8 r_, Uint8 g_, Uint8 b_, Uint8 a_);
 	void changeColor(Uint8 r_, Uint8 g_, Uint8 b_, Uint8 a_);
-	void setPassable(bool passable_);
+	
+	void setPassable(bool isPassable_);
+	
 	bool isPassable() const {
 		return passable;
 	}

@@ -67,9 +67,5 @@ void Tile::Render()
 
 }
 
-//bool Tile::isTileBlocked()
-//{
-//	return
-//}
 
 

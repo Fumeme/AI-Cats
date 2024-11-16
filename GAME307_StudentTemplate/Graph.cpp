@@ -30,6 +30,7 @@ bool Graph::OnCreate(std::vector<Node*> nodes_)
 
         for (int j = 0; j < numNodes; j++)
         {
+            //clearconnection
             cost[i][j] = 0.0f;
         }
     }

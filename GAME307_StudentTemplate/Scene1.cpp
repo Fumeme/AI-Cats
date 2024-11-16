@@ -202,7 +202,7 @@ bool Scene1::OnCreate() {
 		//TODO error message
 		return false;
 	}
-
+	//ClearConnection(); 
 	calculateConnectionsWeights();
 
 	std::vector<Node*> path = graph->findPath(
@@ -310,13 +310,9 @@ void Scene1::HandleEvents(const SDL_Event& event)
 					if (tile->getNode() == selectedNode) {
 						tile->setPassable(false);
 						// Change color for the selected node
-						tile->setColor(255, 0, 0, 255); // Red color
+						tile->setColor(255, 0, 0, 255);
 						//SDL_RenderPresent(renderer);
-						calculateConnectionsWeights();
-						graph->findPath(
-							sceneNodes[0],
-							sceneNodes[15]
-						);
+						
 
 					}
 					else {
@@ -327,7 +323,12 @@ void Scene1::HandleEvents(const SDL_Event& event)
 
 			}
 
+			calculateConnectionsWeights();
 
+			std::vector<Node*> path = graph->findPath(
+				sceneNodes[0],
+				sceneNodes[15]
+			);
 
 
 		}
