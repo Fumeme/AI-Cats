@@ -56,6 +56,7 @@ void Body::ApplyForce( Vec3 force_ ) {
     accel = force_ / mass;
 }
 
+
 void Body::Update( float deltaTime ){
     pos = pos + vel * deltaTime + accel * (0.5f * deltaTime * deltaTime);
     vel = vel + accel * deltaTime;

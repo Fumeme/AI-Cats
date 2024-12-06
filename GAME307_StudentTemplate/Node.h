@@ -4,6 +4,7 @@
 #include <Vector.h>
 #include <vector>
 #include <cmath>  // For abs function
+#include <Vector.h>
 
 class Node
 {
@@ -18,17 +19,44 @@ public:
     bool walkable = true;    // If the node is walkable
 
     // Constructor
-    Node(int label_) : label{ label_ }, x(0), y(0) {}
+    Node(int label_) : label{ label_ } {
+        x = label_ / 25;  // Assuming grid size is 25x25
+        y = label_ % 25;
+        
+    }
 
     // Destructor
     ~Node() {}
 
-    int getLabel() { return label; }
+    int getLabel() {
+
+        if (this != nullptr && label != NULL) {
+            return label;
+        } else
+        return NULL;
+    }
 
     // Calculate total cost (fCost = gCost + hCost)
     float fCost() const
     {
         return gCost + hCost;
+    }
+     MATH::Vec2 getPos2() {
+        MATH::Vec2 Result;
+        Result.x = x;
+        Result.y = y;
+        return Result;
+    }
+     MATH::Vec3 getPos3() {
+        MATH::Vec3 Result;
+        if (this == nullptr) {
+            std::cerr << "node is null" << std::endl;
+            return Result;;
+        }
+        Result.x = x;
+        Result.y = y;
+        Result.z = 0;
+        return Result;
     }
 
     // Compare nodes for the priority queue (min-heap)
@@ -44,8 +72,13 @@ public:
     }
 
     // Optional: Function to convert label to grid position, if needed
-    MATH::Vec2 NodeToGrid(int label_);
-
+    MATH::Vec2 NodeToGrid(int label_)
+    {
+        MATH::Vec2 pos;
+        pos.x = x;
+        pos.y = y;
+        return pos;
+    }
 };
 
 #endif

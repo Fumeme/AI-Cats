@@ -33,6 +33,14 @@ void PlayerBody::OnDestroy()
     }
 }
 
+//Node* PlayerBody::getNode() {
+//    //for each (Node * node in scene->game )
+//    //{
+//
+//    //}
+//    return scene->getGraph()->getNode((scene->game->getPlayer()->getPos().x * 25) + scene->game->getPlayer()->getPos().y);
+//}
+
 void PlayerBody::Render( float scale ) const
 {
     // This is why we need game in the constructore, to get the renderer, etc.

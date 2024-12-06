@@ -37,6 +37,12 @@ void Scene1::CreateTiles()
 			//create tile
 			n = new Node(label);
 			sceneNodes[label] = n;
+			if (n == nullptr) {
+				std::cerr << "Failed to create node at label " << label << std::endl;
+			}
+			else {
+				std::cout << "Node created at label " << label << " with position (" << n->x << ", " << n->y << ")" << std::endl;
+			}
 			Vec3 tilePos = Vec3(x, y, 0.0f);
 			t = new Tile(n, tilePos, tileWidth, tileHeight, this);
 			tiles[i][j] = t;
@@ -79,59 +85,40 @@ Node* Scene1::getNodeAtPosition(int mouseX, int mouseY) {
 //	return nullptr;
 //}
 
-
-void Scene1::calculateConnectionsWeights()
-{
-	// I'm smart enough to only call this
-	// after having properly created the tiles matrix
+void Scene1::calculateConnectionsWeights() {
 	int rows = tiles.size();
 	int cols = tiles[0].size();
-
-	for (int i = 0; i < rows; i++)
-	{
-		for (int j = 0; j < cols; j++)
-		{
-			//tiles[i][j]->getNode();
-			//
-			//                 i+1, j
-			//   i,j-1            i,j                i,j+1
-			//                 i-1, j
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
 			Tile* fromTile = tiles[i][j];
 			Node* from = fromTile->getNode();
+			if (!fromTile->isPassable()) continue;
 
 			// left
-			if (j >= 1 && tiles[i][j - 1]->isPassable() == true)
-			{
+			if (j >= 1 && tiles[i][j - 1]->isPassable()) {
 				Node* to = tiles[i][j - 1]->getNode();
 				graph->addWeightedConnection(from, to, tileWidth);
 			}
 
 			// right
-			if ((j + 1) < cols && tiles[i][j + 1]->isPassable() == true)
-			{
+			if ((j + 1) < cols && tiles[i][j + 1]->isPassable()) {
 				Node* to = tiles[i][j + 1]->getNode();
 				graph->addWeightedConnection(from, to, tileWidth);
 			}
 
-			//above
-			if ((i + 1) < rows && tiles[i + 1][j]->isPassable() == true)
-			{
+			// above
+			if ((i + 1) < rows && tiles[i + 1][j]->isPassable()) {
 				Node* to = tiles[i + 1][j]->getNode();
 				graph->addWeightedConnection(from, to, tileHeight);
 			}
 
-			//below
-			if ((i - 1) >= 0 && tiles[i - 1][j]->isPassable() == true)
-			{
+			// below
+			if ((i - 1) >= 0 && tiles[i - 1][j]->isPassable()) {
 				Node* to = tiles[i - 1][j]->getNode();
 				graph->addWeightedConnection(from, to, tileHeight);
 			}
-
 		}
-
-
 	}
-
 }
 
 Scene1::Scene1(SDL_Window* sdlWindow_, GameManager* game_) {
@@ -147,7 +134,7 @@ Scene1::Scene1(SDL_Window* sdlWindow_, GameManager* game_) {
 
 	// create a NPC
 	blinky = nullptr;
-	
+
 }
 
 Scene1::~Scene1() {}
@@ -186,13 +173,13 @@ bool Scene1::OnCreate() {
 	// Set up characters, choose good values for the constructor
 	// or use the defaults, like this
 	blinky = new Character();
-	
+
 	if (!blinky->OnCreate(this) || !blinky->setTextureWith("Blinky.png"))
 	{
 		return false;
 	}
 
-	
+
 	// end of character set ups
 
 	// create a graph
@@ -202,15 +189,15 @@ bool Scene1::OnCreate() {
 		//TODO error message
 		return false;
 	}
-	//ClearConnection(); 
+	ClearConnections();
 	calculateConnectionsWeights();
 
 	std::vector<Node*> path = graph->findPath(
-		sceneNodes[0],
-		sceneNodes[15]
+		blinky->getNode(),
+		blinky->getPlayerNode()
 	);
 
-
+	blinky->setPath(path);
 
 
 	return true;
@@ -229,125 +216,117 @@ void Scene1::OnDestroy()
 
 void Scene1::Update(const float deltaTime) {
 	// Calculate and apply any steering for npc's
-	blinky->Update(deltaTime);
-	
-	// Update player
-	game->getPlayer()->Update(deltaTime);
-}
-
-void Scene1::Render() {
-	//do not deprioritize these
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-	SDL_RenderClear(renderer);
-
-	//move this above tile rendering to show map after grid & vice versa
-	SDL_RenderCopy(renderer, backgroundtexture, NULL, NULL);
-
-	for (int i = 0; i < tiles.size(); i++)
-	{
-		for (int j = 0; j < tiles[i].size(); j++)
-		{
-			Tile* tile = tiles[i][j];
-			//if (tile->getNode() == selectedNode) {
-			//	// Change color for the selected node
-			//	tile->setColor(255, 0, 0, 255); // Red color
-			//}
-			//else {
-			//	tile->setColor(17, 178, 178, 255); // Default color
-			//}
-
-
-			tile->Render();
-
-
+	//blinky->setPath(path);
+				// Recalculate the path based on the new graph
+	std::vector<Node*> path = graph->findPath(sceneNodes[0], sceneNodes[15]);
+	//			std::vector<Node*> path = graph->findPath(blinky->getNode(), blinky->getPlayerNode());
+	if (path.empty()) {
+		printf("No path found!\n");
+	}
+	else {
+		std::cout << " =============== PATH ================= " << std::endl;
+		printf("Path found with %zu nodes.\n", path.size());
+		for (auto& node : path) {
+			printf("Node in path: %d\n", node->getLabel());
 		}
+		std::cout << " =============== END PATH ================= " << std::endl;
 
 	}
 
+	calculateConnectionsWeights();
 
+	blinky->setPath(path);
 
-	// render any npc's
+	blinky->Update(deltaTime);
+
+	// Update player
+	game->getPlayer()->Update(deltaTime);
+}
+void Scene1::Render() {
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, backgroundtexture, NULL, NULL);
+
+	// Render tiles
+	for (int i = 0; i < tiles.size(); i++) {
+		for (int j = 0; j < tiles[i].size(); j++) {
+			Tile* tile = tiles[i][j];
+			tile->Render();
+
+			// Render path nodes
+			//if (std::find(blinky->getPath().begin(), blinky->getPath().end(), tile->getNode()) != blinky->getPath().end()) {
+			//	tile->setColor(0, 255, 0, 255);  // Green for path
+			//}
+		}
+	}
+
 	blinky->render(0.10f);
-	//cop->render(0.10f);
-
-	// render the player
 	game->RenderPlayer(0.10f);
-
-
-
 	SDL_RenderPresent(renderer);
 }
 
 void Scene1::HandleEvents(const SDL_Event& event)
 {
 
-	//if mouse clicked, record position on screen and relay it to terminal
+
 	if (event.type == SDL_MOUSEBUTTONDOWN)
 	{
+
+		ClearConnections();
+
 		// get mouse button clicks location
 		int x = event.button.x, y = event.button.y;
 		SDL_GetMouseState(&x, &y);
-		printf("Clicked at: %i x, %i x\n", x, y);
+		printf("Clicked at: %i x, %i y\n", x, y);
 
-
-		//Gets the node at the position of the mouse click
+		// Gets the node at the position of the mouse click
 		Node* selectedNode = getNodeAtPosition(x, y);
 		if (selectedNode)
 		{
-
 			printf("Selected Node: %d\n", selectedNode->getLabel());
-			// You can now use the selected node for further processing
-
-
-
+			// Mark the tile as impassable and change color
 			for (int i = 0; i < tiles.size(); i++)
 			{
 				for (int j = 0; j < tiles[i].size(); j++)
 				{
-
 					Tile* tile = tiles[i][j];
-
 					if (tile->getNode() == selectedNode) {
-						tile->setPassable(false);
-						// Change color for the selected node
-						tile->setColor(255, 0, 0, 255);
-						//SDL_RenderPresent(renderer);
-						
-
-					}
-					else {
-
+						tile->setPassable(false); // Mark as an obstacle
+						tile->setColor(255, 0, 0, 255); // Change to red for obstacle
 					}
 				}
-
-
 			}
 
+			// Recalculate connections and update the path
 			calculateConnectionsWeights();
 
-			std::vector<Node*> path = graph->findPath(
-				sceneNodes[0],
-				sceneNodes[15]
-			);
+			// Recalculate the path based on the new graph
+			std::vector<Node*> path = graph->findPath(sceneNodes[0], sceneNodes[15]);
+			//			std::vector<Node*> path = graph->findPath(blinky->getNode(), blinky->getPlayerNode());
+			if (path.empty()) {
+				printf("No path found!\n");
+			}
+			else {
+				printf("Path found with %zu nodes.\n", path.size());
+				for (auto& node : path) {
+					printf("Node in path: %d\n", node->getLabel());
+				}
+			}
 
-
+			blinky->setPath(path);  // Update NPC path
 		}
 
-
-
 		SDL_RenderPresent(renderer);
-		// send events to npc's as neededD
-
 	}
 
-
-
-
-
-
-
-	// send events to player as needed
+	// Send events to player as needed
 	game->getPlayer()->HandleEvents(event);
+}
 
+
+void Scene1::ClearConnections() {
+	graph->clearAllConnections();
+	//graph->ClearConnections(blinky->getNode(), game->getPlayer()->getNode());
 
 }
+

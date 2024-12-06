@@ -22,6 +22,8 @@ public:
 	Graph();
 	~Graph();
 	bool OnCreate(std::vector< Node* > nodes_);
+	void clearAllConnections();
+	void ClearConnections(Node* fromNode, Node* toNode);
 	int numNodes();
 	Node* getNode(int label) { return node[label]; }
 	void addWeightedConnection(Node* fromNode, Node* toNode, float weight);

@@ -6,6 +6,7 @@
 #include "Timer.h"
 #include "Scene.h"
 #include "PlayerBody.h"
+#include <Graph.h>
 
 
 class GameManager {
@@ -40,6 +41,7 @@ public:
 	Matrix4 getProjectionMatrix() const;
     PlayerBody* getPlayer() const { return player; }
 	Uint32 getChangeScene() const { return changeSceneEventType; }
+	Graph* getGraph() {   }
 
 	SDL_Renderer* getRenderer();
 	void RenderPlayer(float scale = 1.0f);

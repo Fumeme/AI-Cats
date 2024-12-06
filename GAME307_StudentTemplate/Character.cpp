@@ -11,10 +11,10 @@ bool Character::OnCreate(Scene* scene_)
 		float orientation = 0.0f;
 		float rotation = 0.0f;
 		float angular = 0.0f;
-		float maxSpeed = 4.0f;
-		float maxAcceleration = 10.0f;
-		float maxRotation = 2.0f;
-		float maxAngular = 10.0f;
+		float maxSpeed = 3.0f;
+		float maxAcceleration = 5.0f;
+		float maxRotation = 2.5f;
+		float maxAngular = 12.0f;
 		body = new KinematicBody(
 			Vec3(10.0f, 5.0f, 0), Vec3(0, 0, 0), Vec3(0, 0, 0), 1.0f,
 			radius,
@@ -27,6 +27,7 @@ bool Character::OnCreate(Scene* scene_)
 			maxAngular
 		);
 	}
+
 
 	if (!body)
 	{
@@ -69,30 +70,57 @@ bool Character::setTextureWith(string file)
 	return true;
 }
 
-void Character::Update(float deltaTime)
+
+
+
+Node* Character::getPlayerNode() {
+
+	return scene->getGraph()->getNode((scene->game->getPlayer()->getPos().x * 25) + scene->game->getPlayer()->getPos().y);
+}
+
+Node* Character::getNode() {
+
+	return scene->getGraph()->getNode((body->getPos().x * 25) + (body->getPos().y));
+}
+
+void Character::setPath(vector<Node*> path_temp)
 {
-	// create a new overall steering output
-	SteeringOutput* steering;
+	path.clear();
+	if (!path_temp.empty()) {
+		path = path_temp;
+	}
 
-	// set the target for steering; target is used by the steerTo... functions
-	// (often the target is the Player)
+}
+void Character::Update(float deltaTime) {
+	if (path.empty()) {
+		std::cout << "Path is empty" << std::endl;
+		return;
+	}
 
-	// using the target, calculate and set values in the overall steering output
-	// TODO: error handling if new fails
+	Node* currentTarget = path[currentTargetIndex];
+	Vec3 targetPos = currentTarget->getPos3();
+	Vec3 direction = targetPos - body->getPos();
+
+
+	if (calculateDistance(direction) < 0.1f) {
+		currentTargetIndex++;
+		if (currentTargetIndex >= path.size()) {
+			currentTargetIndex = 0;  // Path completed
+		}
+	}
 
 	SteeringBehaviour* steering_algorithm = new Seek(body, scene->game->getPlayer());
-	steering = steering_algorithm->getSteering();
+	SteeringOutput* steering = steering_algorithm->getSteering();
 
-	// apply the steering to the equations of motion
 	body->Update(deltaTime, steering);
 
-	// clean up memory
-	// (delete only those objects created in this function)
-	if (steering_algorithm)
-	{
-		delete steering_algorithm;
-	}
+	delete steering_algorithm;
+	//delete steering;
 }
+float Character::calculateDistance(const Vec3& vec) {
+	return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
 
 void Character::HandleEvents(const SDL_Event& event)
 {

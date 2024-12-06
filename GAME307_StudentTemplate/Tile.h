@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TILE_H
+#define TILE_H
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -54,3 +55,4 @@ public:
 
 };
 
+#endif  // TILE_H

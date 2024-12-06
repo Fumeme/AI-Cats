@@ -15,7 +15,6 @@ class Scene1 : public Scene {
 private:
 
 
-	class Graph* graph;
 	std::vector<Node*> sceneNodes;
 
 	float tileHeight;
@@ -26,7 +25,6 @@ private:
 	void CreateTiles();
 	Node* getNodeAtPosition(int mouseX, int mouseY);
 	Node* selectedNode;
-	void calculateConnectionsWeights();
 
 	SDL_Window* window;
 	float xAxis = 25.0f;
@@ -42,6 +40,9 @@ private:
 //	Cop* cop;
 
 public:
+	void calculateConnectionsWeights();
+	//class Graph* graph;
+	//Graph* getGraph() const { return graph; }
 	Scene1(SDL_Window* sdlWindow, GameManager* game_);
 	~Scene1();
 	bool OnCreate();
@@ -54,6 +55,7 @@ public:
 	SDL_Window* getWindow() { return window; }
 	Matrix4 getProjectionMatrix() { return projectionMatrix; }
 	Matrix4 getInverseMatrix() { return inverseProjection; }
+	void ClearConnections();
 
 
 };

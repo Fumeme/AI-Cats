@@ -12,9 +12,11 @@ Graph::~Graph()
 bool Graph::OnCreate(std::vector<Node*> nodes_)
 {
     // given a list of nodes, initialize a matrix of costs with 0.0
+
     int numNodes = nodes_.size();
 
     cost.resize(numNodes);
+
     for (int i = 0; i < numNodes; i++)
     {
         // populate the internal map
@@ -30,12 +32,35 @@ bool Graph::OnCreate(std::vector<Node*> nodes_)
 
         for (int j = 0; j < numNodes; j++)
         {
-            //clearconnection
+
+
+            //ClearConnections();
+            //clearAllConnections();
             cost[i][j] = 0.0f;
+            
         }
     }
 
     return true;
+}
+void Graph::clearAllConnections() {
+    // Step 1: Clear the connection costs (set all to -1.0f or another default value)
+    for (auto& row : cost) {
+        std::fill(row.begin(), row.end(), 0.0f); // Reset all weights (assuming -1.0f means no connection)
+    }
+
+    // Step 2: Optionally, clear per-node connection information (like neighbors, visited flag, etc.)
+    for (auto& pair : node) {
+        if (pair.second != nullptr) {
+        Node* currentNode = pair.second;
+        currentNode->walkable = true;
+
+    }
+
+    }
+}
+void Graph::ClearConnections(Node* fromNode, Node* toNode) {
+    addWeightedConnection(fromNode, toNode, 0.0f);
 }
 
 int Graph::numNodes()
@@ -48,19 +73,31 @@ void Graph::addWeightedConnection(Node* fromNode, Node* toNode, float weight)
     cost[fromNode->getLabel()][toNode->getLabel()] = weight;
 }
 
-std::vector<Node*> Graph::neighbours(Node* fromNode)
-{
+std::vector<Node*> Graph::neighbours(Node* fromNode) {
     std::vector<Node*> result = {};
     int from = fromNode->getLabel();
-    for (int j = 0; j < numNodes(); j++)
-    {
-        if (cost[from][j] > 0.0f)
-        {
+
+    // Debug print to check if the cost matrix is properly set
+  //  std::cout << "Checking neighbors for node " << fromNode->getLabel() << std::endl;
+
+    cost.resize(numNodes());
+    for (int j = 0; j < numNodes(); j++) {
+        cost[j].resize(numNodes());  // Initialize each row with a size of numNodes() and default value 0.0f
+        if (cost
+            [from]
+            [j] > 
+            0.0f) 
+        { // there is a valid connection
             result.push_back(getNode(j));
         }
     }
+
+    // Debug print to check the number of neighbors
+   // std::cout << "Number of neighbors: " << result.size() << std::endl;
+
     return result;
 }
+
 
 struct NodeAndPriority
 {
@@ -146,16 +183,23 @@ std::vector<Node*> Graph::findPath(Node* startNode, Node* goalNode)
     // TODO
     // follow the breadcrumbs in came from to rebuild the path, store in result
     int current = goal;
-    while (current != start)
-    {
-        if (current >= numNodes() || current < 0)
-        {
-            std::cerr << "Error: current out of range: " << current << "\n";
+    while (current != start) {
+        if (current >= numNodes() || current < 0) {
+            std::cerr << "Error: current out of range: " << current << std::endl;
             break;
         }
-        result.push_back(getNode(current));
+
+        Node* node = getNode(current);
+        if (node == nullptr) {
+            std::cerr << "Error: getNode returned nullptr for label " << current << std::endl;
+            break;
+        }
+
+        result.push_back(node);
         current = came_from[current];
     }
+
+
     result.push_back(getNode(start));
     std::reverse(result.begin(), result.end());
 
