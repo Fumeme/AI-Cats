@@ -74,12 +74,29 @@ bool Character::setTextureWith(string file)
 
 
 Node* Character::getPlayerNode() {
+	int x = (scene->game->getPlayer()->getPos().x);
+	int y = (scene->game->getPlayer()->getPos().y);
 
+	x = static_cast<int>(std::round(x));
+	y = static_cast<int>(std::round(y));
+
+	std::cout << "Player Pos: (" << x << ", " << y << ") at node: " << scene->getGraph()->getNode((x * 25) + (y))->getLabel() << std::endl;
+
+
+	//return scene->getGraph()->getNode((x * 25) + y);
 	return scene->getGraph()->getNode((scene->game->getPlayer()->getPos().x * 25) + scene->game->getPlayer()->getPos().y);
 }
 
 Node* Character::getNode() {
+	int x = (body->getPos().x);
+	int y = (body->getPos().y);
 
+	x = static_cast<int>(std::round(x));
+	y = static_cast<int>(std::round(y));
+
+	std::cout << "Enemy Pos: (" << x << ", " << y << ") at node: " << scene->getGraph()->getNode((x * 25) + (y))->getLabel() << std::endl;
+
+	//return scene->getGraph()->getNode((x * 25) + (y));
 	return scene->getGraph()->getNode((body->getPos().x * 25) + (body->getPos().y));
 }
 
@@ -89,6 +106,7 @@ void Character::setPath(vector<Node*> path_temp)
 	if (!path_temp.empty()) {
 		path = path_temp;
 	}
+	currentTarget = path.front();
 
 }
 void Character::Update(float deltaTime) {
@@ -97,19 +115,28 @@ void Character::Update(float deltaTime) {
 		return;
 	}
 
-	Node* currentTarget = path[currentTargetIndex];
+
+	std::cout << currentTargetIndex << std::endl;
+	//currentTarget = path[currentTargetIndex];
 	Vec3 targetPos = currentTarget->getPos3();
 	Vec3 direction = targetPos - body->getPos();
 
-
-	if (calculateDistance(direction) < 0.1f) {
-		currentTargetIndex++;
-		if (currentTargetIndex >= path.size()) {
+		if (currentTargetIndex >= path.size() || currentTargetIndex < 0) {
 			currentTargetIndex = 0;  // Path completed
+			return;
 		}
+		if (path.at(currentTargetIndex) == nullptr)
+		{
+			currentTargetIndex = 0;
+			return;
+		}
+	if (calculateDistance(path.at(currentTargetIndex)->getPos3()) < 0.15f) {
+		currentTargetIndex++;
+		currentTarget = path.at(currentTargetIndex);
 	}
 
-	SteeringBehaviour* steering_algorithm = new Seek(body, scene->game->getPlayer());
+
+	SteeringBehaviour* steering_algorithm = new Seek(body, targetPos);
 	SteeringOutput* steering = steering_algorithm->getSteering();
 
 	body->Update(deltaTime, steering);

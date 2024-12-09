@@ -22,6 +22,8 @@ private:
 public:
 	std::vector<Node*> path;  // stores the path
 	int currentTargetIndex;  // stores the current target index in the path
+	Node* currentTarget;
+
 	Character()
 	{
 		body = NULL;

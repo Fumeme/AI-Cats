@@ -218,7 +218,7 @@ void Scene1::Update(const float deltaTime) {
 	// Calculate and apply any steering for npc's
 	//blinky->setPath(path);
 				// Recalculate the path based on the new graph
-	std::vector<Node*> path = graph->findPath(sceneNodes[0], sceneNodes[15]);
+	std::vector<Node*> path = graph->findPath(blinky->getNode(), blinky->getPlayerNode());
 	//			std::vector<Node*> path = graph->findPath(blinky->getNode(), blinky->getPlayerNode());
 	if (path.empty()) {
 		printf("No path found!\n");
@@ -301,7 +301,7 @@ void Scene1::HandleEvents(const SDL_Event& event)
 			calculateConnectionsWeights();
 
 			// Recalculate the path based on the new graph
-			std::vector<Node*> path = graph->findPath(sceneNodes[0], sceneNodes[15]);
+			std::vector<Node*> path = graph->findPath(blinky->getNode(), blinky->getPlayerNode());
 			//			std::vector<Node*> path = graph->findPath(blinky->getNode(), blinky->getPlayerNode());
 			if (path.empty()) {
 				printf("No path found!\n");
